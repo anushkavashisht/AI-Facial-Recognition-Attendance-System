@@ -6,6 +6,7 @@ from PIL import Image
 import smtplib
 from email.message import EmailMessage
 from datetime import datetime
+import pytz
 
 # ---------------- CONFIG ----------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -22,6 +23,9 @@ os.makedirs(DATABASE_DIR, exist_ok=True)
 os.makedirs(FOOTAGE_DIR, exist_ok=True)
 
 # ---------------- HELPERS ----------------
+from datetime import datetime
+import pytz  # Add this import at the top of your file
+
 def preprocess_face(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(
@@ -42,7 +46,11 @@ def send_email(to_email, student_name):
     msg["From"] = EMAIL_FROM
     msg["To"] = to_email
 
-    time_now = datetime.now().strftime("%H:%M:%S")
+    # ---------------- TIME FIX FOR IST ----------------
+    india_tz = pytz.timezone("Asia/Kolkata")
+    time_now = datetime.now(india_tz).strftime("%H:%M:%S")
+    # -----------------------------------------------
+
     msg.set_content(
         f"Dear Parent,\n\nYour child {student_name} has arrived at school safely at {time_now}.\n\nRegards,\nSchool Administration"
     )
@@ -50,6 +58,7 @@ def send_email(to_email, student_name):
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(EMAIL_FROM, EMAIL_PASSWORD)
         server.send_message(msg)
+
 
 # ---------------- STREAMLIT UI ----------------
 st.set_page_config(page_title="AI-Enabled Facial Recognition Attendance System")
